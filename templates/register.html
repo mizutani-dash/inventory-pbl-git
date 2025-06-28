@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>出庫登録フォーム</title>
+</head>
+<body>
+    <h1>出庫登録フォーム</h1>
+    <form method="POST">
+        <label>出庫日: <input type="date" name="date" required></label><br>
+        <label>出庫先: <input type="text" name="destination" required></label><br>
+        <label>担当者: <input type="text" name="staff" required></label><br><br>
+
+        <h3>出庫商品（最大5件）</h3>
+        {% for i in range(1, 6) %}
+            <div>
+                商品名{{ i }}: <input type="text" name="item{{ i }}">
+                数量: <input type="number" name="qty{{ i }}" min="1">
+            </div><br>
+        {% endfor %}
+
+        <button type="submit">出庫登録</button>
+    </form>
+</body>
+</html>
