@@ -1,0 +1,38 @@
+<!-- templates/edit.html -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>出庫情報の編集</title>
+</head>
+<body>
+    <h1>出庫情報の編集</h1>
+
+    <form method="POST">
+        <p><strong>出庫ID：</strong>{{ 出庫ID }}</p>
+
+        <p>
+            出庫日：<input type="date" name="date" value="{{ 出庫情報[1] }}">
+        </p>
+        <p>
+            出庫先：<input type="text" name="destination" value="{{ 出庫情報[2] }}">
+        </p>
+        <p>
+            取引先：<input type="text" name="client" value="{{ 出庫情報[3] }}">
+        </p>
+        <p>
+            担当者：<input type="text" name="staff" value="{{ 出庫情報[4] }}">
+        </p>
+
+        <button type="submit">保存する</button>
+    </form>
+
+    <p>
+        <a href="{{ url_for('edit_detail', shukko_id=出庫ID) }}">
+            ▶ 出庫詳細の編集はこちら
+        </a>
+    </p>
+
+    <p><a href="{{ url_for('list_data') }}">← 一覧に戻る</a></p>
+</body>
+</html>

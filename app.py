@@ -66,6 +66,37 @@ def detail(shukko_id):
     return render_template('detail.html', 出庫情報=出庫情報, 出庫詳細=出庫詳細, 出庫ID=shukko_id)
 
 
+@app.route('/edit/<shukko_id>', methods=['GET', 'POST'])
+def edit(shukko_id):
+    出庫情報シート, _ = connect_sheets()
+    出庫情報リスト = 出庫情報シート.get_all_values()
+
+    # 該当行のインデックスとデータを取得
+    index = None
+    出庫情報 = None
+    for i, row in enumerate(出庫情報リスト):
+        if row[0] == shukko_id:
+            index = i + 1  # Sheetsは1始まり
+            出庫情報 = row
+            break
+
+    if request.method == 'POST':
+        出庫日 = request.form['date']
+        出庫先 = request.form['destination']
+        取引先 = request.form['client']
+        担当者 = request.form['staff']
+
+        出庫情報シート.update(f'B{index}:E{index}', [[出庫日, 出庫先, 取引先, 担当者]])
+        return redirect(url_for('list_data'))
+
+
+    return render_template('edit.html', 出庫ID=shukko_id, 出庫情報=出庫情報)
+
+@app.route('/edit-detail/<shukko_id>')
+def edit_detail(shukko_id):
+    return f"出庫詳細編集画面（準備中）: {shukko_id}"
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
