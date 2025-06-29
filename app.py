@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
+import datetime
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -11,6 +12,12 @@ def connect_sheets():
     sheet = client.open('【開発用】シードル出庫台帳')  # ←シート名も合わせてね
     return sheet.worksheet('出庫情報'), sheet.worksheet('出庫詳細')
 
+def generate_unique_id(出庫情報シート):
+    today_str = datetime.datetime.now().strftime("%y%m%d")
+    all_ids = [row[0] for row in 出庫情報シート.get_all_values()[1:] if row[0].startswith(today_str)]
+    counter = len(all_ids) + 1
+    return f"{today_str}-{str(counter).zfill(3)}"
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -20,8 +27,8 @@ def register():
         取引先 = request.form.get('client', '')  # ← 追加欄、空欄OK
 
         出庫情報シート, 出庫詳細シート = connect_sheets()
-        next_row = len(出庫情報シート.get_all_values()) + 1
-        出庫ID = str(next_row).zfill(4)
+        出庫ID = generate_unique_id(出庫情報シート)
+
 
         # ✅ シートの列順に合わせて書き込み（出庫ID, 出庫日, 出庫先, 取引先, 担当者）
         出庫情報シート.append_row([出庫ID, 出庫日, 出庫先, 取引先, 担当者])
@@ -38,12 +45,25 @@ def register():
 
 @app.route('/list')
 def list_data():
-    出庫情報シート, 出庫詳細シート = connect_sheets()
+    出庫情報シート, _ = connect_sheets()  # ← 出庫詳細シートは使わない
 
     出庫情報 = 出庫情報シート.get_all_values()
-    出庫詳細 = 出庫詳細シート.get_all_values()
 
-    return render_template('list.html', 出庫情報=出庫情報, 出庫詳細=出庫詳細)
+    return render_template('list.html', 出庫情報=出庫情報)
+
+@app.route('/detail/<shukko_id>')
+def detail(shukko_id):
+    出庫情報シート, 出庫詳細シート = connect_sheets()
+
+    # 出庫情報の該当行だけ取得（ヘッダー除いて検索）
+    出庫情報リスト = 出庫情報シート.get_all_values()
+    出庫情報 = next((row for row in 出庫情報リスト if row[0] == shukko_id), None)
+
+    # 出庫詳細の該当行をすべて取得
+    出庫詳細リスト = 出庫詳細シート.get_all_values()
+    出庫詳細 = [row for row in 出庫詳細リスト if row[0] == shukko_id]
+
+    return render_template('detail.html', 出庫情報=出庫情報, 出庫詳細=出庫詳細, 出庫ID=shukko_id)
 
 
 
