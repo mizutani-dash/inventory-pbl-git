@@ -18,19 +18,19 @@ def generate_unique_id(出庫情報シート):
     counter = len(all_ids) + 1
     return f"{today_str}-{str(counter).zfill(3)}"
 
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         出庫日 = request.form['date']
         出庫先 = request.form['destination']
         担当者 = request.form['staff']
-        取引先 = request.form.get('client', '')  # ← 追加欄、空欄OK
+        取引先 = request.form.get('client', '')
 
         出庫情報シート, 出庫詳細シート = connect_sheets()
         出庫ID = generate_unique_id(出庫情報シート)
 
-
-        # ✅ シートの列順に合わせて書き込み（出庫ID, 出庫日, 出庫先, 取引先, 担当者）
         出庫情報シート.append_row([出庫ID, 出庫日, 出庫先, 取引先, 担当者])
 
         for i in range(1, 6):
@@ -39,9 +39,17 @@ def register():
             if 商品名 and 数量:
                 出庫詳細シート.append_row([出庫ID, 商品名, 数量])
 
-        return redirect(url_for('register'))
+        # ✅ POST時だけ success を返す
+        return render_template(
+            'success.html',
+            message="出庫情報を登録しました",
+            redirect_url=url_for('register')
+        )
 
+    # ✅ GET時は通常のフォームを表示
     return render_template('register.html')
+
+
 
 @app.route('/list')
 def list_data():
@@ -87,10 +95,16 @@ def edit(shukko_id):
         担当者 = request.form['staff']
 
         出庫情報シート.update(f'B{index}:E{index}', [[出庫日, 出庫先, 取引先, 担当者]])
-        return redirect(url_for('list_data'))
+        return render_template(
+        'success.html',
+        message="出庫情報を更新しました",
+        redirect_url=url_for('list_data')
+    )
 
 
     return render_template('edit.html', 出庫ID=shukko_id, 出庫情報=出庫情報)
+
+
 
 @app.route('/edit-detail/<shukko_id>', methods=['GET', 'POST'])
 def edit_detail(shukko_id):
@@ -113,8 +127,11 @@ def edit_detail(shukko_id):
             数量 = request.form.get(f'qty{i}')
             if 商品名 and 数量:
                 出庫詳細シート.update(f'B{item["index"]}:C{item["index"]}', [[商品名, 数量]])
-        return redirect(url_for('edit', shukko_id=shukko_id))
-
+        return render_template(
+        'success.html',
+        message="出庫詳細を更新しました",
+        redirect_url=url_for('edit', shukko_id=shukko_id)
+        )
     return render_template('edit_detail.html', 出庫ID=shukko_id, 出庫詳細=対象行)
 
 
