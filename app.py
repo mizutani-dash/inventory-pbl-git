@@ -92,9 +92,31 @@ def edit(shukko_id):
 
     return render_template('edit.html', 出庫ID=shukko_id, 出庫情報=出庫情報)
 
-@app.route('/edit-detail/<shukko_id>')
+@app.route('/edit-detail/<shukko_id>', methods=['GET', 'POST'])
 def edit_detail(shukko_id):
-    return f"出庫詳細編集画面（準備中）: {shukko_id}"
+    _, 出庫詳細シート = connect_sheets()
+    出庫詳細リスト = 出庫詳細シート.get_all_values()
+
+    # 該当する出庫詳細だけ取り出す
+    対象行 = []
+    for i, row in enumerate(出庫詳細リスト):
+        if row[0] == shukko_id:
+            対象行.append({
+                "index": i + 1,  # Sheetsは1始まり
+                "商品名": row[1],
+                "数量": row[2]
+            })
+
+    if request.method == 'POST':
+        for i, item in enumerate(対象行):
+            商品名 = request.form.get(f'item{i}')
+            数量 = request.form.get(f'qty{i}')
+            if 商品名 and 数量:
+                出庫詳細シート.update(f'B{item["index"]}:C{item["index"]}', [[商品名, 数量]])
+        return redirect(url_for('edit', shukko_id=shukko_id))
+
+    return render_template('edit_detail.html', 出庫ID=shukko_id, 出庫詳細=対象行)
+
 
 
 
