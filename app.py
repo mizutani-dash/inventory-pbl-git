@@ -36,6 +36,16 @@ def register():
 
     return render_template('register.html')
 
+@app.route('/list')
+def list_data():
+    出庫情報シート, 出庫詳細シート = connect_sheets()
+
+    出庫情報 = 出庫情報シート.get_all_values()
+    出庫詳細 = 出庫詳細シート.get_all_values()
+
+    return render_template('list.html', 出庫情報=出庫情報, 出庫詳細=出庫詳細)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
