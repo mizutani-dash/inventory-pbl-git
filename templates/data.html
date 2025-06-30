@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アップロード済みデータ一覧</title>
+</head>
+<body>
+    <div>
+        <a href="{{ url_for('index') }}">« トップページに戻る</a>
+        
+        <hr>
+
+        <h1>アップロード済みデータ一覧 (ローカルDB)</h1>
+        <p>CSVからアップロードされ、システム内部のデータベースに保存されているデータです。</p>
+
+        <form action="{{ url_for('delete_all_entries') }}" method="post" onsubmit="return confirm('本当にすべてのデータを削除しますか？\nこの操作は元に戻せません。');" style="margin-bottom: 20px;">
+            <button type="submit">全データ削除</button>
+        </form>
+        
+        <table border="1" style="border-collapse: collapse; width: 100%;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>販売日</th>
+                    <th>商品名</th>
+                    <th>販売数</th>
+                    <th>元ファイル名</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td>{{ entry['id'] }}</td>
+                    <td>{{ entry['date'] }}</td>
+                    <td>{{ entry['product_name'] }}</td>
+                    <td>{{ entry['sales_count'] }}</td>
+                    <td>{{ entry['source_filename'] }}</td>
+                    <td>
+                        <form action="{{ url_for('delete_entry', id=entry['id']) }}" method="post" onsubmit="return confirm('このデータを削除しますか？');">
+                            <button type="submit">削除</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center;">データがありません。トップページからCSVファイルをアップロードしてください。</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
