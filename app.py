@@ -53,7 +53,7 @@ def connect_sheets():
 # 新しい出庫IDを生成
 def generate_unique_id(出庫情報シート):
     """日付ベースのユニークな出庫IDを生成する (例: 240521-001)"""
-    today_str = datetime.datetime.now().strftime("%y%m%d")
+    today_str = datetime.now().strftime("%y%m%d")
     all_values = 出庫情報シート.get_all_values()
     # ヘッダー行を除き、今日の日付で始まるIDをフィルタリング
     all_ids = [row[0] for row in all_values[1:] if row and row[0].startswith(today_str)]
