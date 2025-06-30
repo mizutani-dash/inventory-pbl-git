@@ -12,6 +12,21 @@ import re
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
+from dotenv import load_dotenv
+load_dotenv()
+
+#デバック用
+json_content = os.environ.get('GOOGLE_CREDENTIALS_JSON')
+
+if not json_content:
+    raise ValueError("⚠️ 環境変数 'GOOGLE_CREDENTIALS_JSON' が読み込めてないよ！")
+
+try:
+    creds_dict = json.loads(json_content)
+except json.JSONDecodeError as e:
+    print("🧨 JSON形式が正しくないかも:", e)
+    raise
+
 
 # --- 1. アプリケーションの初期設定 ---
 app = Flask(__name__)
