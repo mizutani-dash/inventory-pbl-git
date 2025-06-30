@@ -194,6 +194,24 @@ def edit(shukko_id):
     return render_template('edit.html', 出庫ID=shukko_id, 出庫情報=出庫情報)
 
 
+@app.route('/delete/<shukko_id>')
+def delete_shukko(shukko_id):
+    出庫情報シート, 出庫詳細シート = connect_sheets()
+
+    # 出庫情報シートから対象行を削除
+    cell = 出庫情報シート.find(shukko_id)
+    if cell:
+        出庫情報シート.delete_rows(cell.row)
+
+    # 出庫詳細シートからも関連行を削除
+    cells = 出庫詳細シート.findall(shukko_id)
+    for c in reversed(cells):  # 後ろから削除しないとインデックスずれる
+        出庫詳細シート.delete_rows(c.row)
+
+    return redirect(url_for('list_data'))  # 一覧に戻る
+
+
+
 @app.route('/edit-detail/<shukko_id>', methods=['GET', 'POST'])
 def edit_detail(shukko_id):
     """出庫詳細の編集ページ"""
@@ -238,6 +256,34 @@ def edit_detail(shukko_id):
     出庫詳細リスト = 出庫詳細シート.get_all_values()
     出庫詳細 = [row for row in 出庫詳細リスト if row[0] == shukko_id]
     return render_template('edit_detail.html', 出庫ID=shukko_id, 出庫詳細=出庫詳細)
+
+
+@app.route('/edit-detail/<shukko_id>/<detail_id>', methods=['POST'])
+def edit_shukko_detail(shukko_id, detail_id):
+    new_name = request.form['product_name']
+    new_qty = request.form['quantity']
+    出庫詳細シート = connect_sheets()[1]
+
+    # detail_idをキーにして該当行を探し更新
+    cell = 出庫詳細シート.find(detail_id)
+    if cell:
+        row = cell.row
+        出庫詳細シート.update_cell(row, 3, new_name)  # 商品名
+        出庫詳細シート.update_cell(row, 4, new_qty)   # 数量
+
+    return redirect(url_for('detail', 出庫ID=shukko_id))
+
+
+@app.route('/delete-detail/<shukko_id>/<detail_id>')
+def delete_detail(shukko_id, detail_id):
+    出庫詳細シート = connect_sheets()[1]
+
+    cell = 出庫詳細シート.find(detail_id)
+    if cell:
+        出庫詳細シート.delete_rows(cell.row)
+
+    return redirect(url_for('detail', 出庫ID=shukko_id))
+
 
 
 def process_and_store_csv(filepath, filename, file_hash):
