@@ -49,6 +49,28 @@ def connect_sheets():
     sheet = client.open('【開発用】シードル出庫台帳')
     return sheet.worksheet('出庫情報'), sheet.worksheet('出庫詳細')
 
+#プルダウン形式での出庫情報入力
+def get_shukkosaki_options():
+    sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
+        json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+        ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    )).open('【開発用】シードル出庫台帳').worksheet('出庫先')
+    return sheet.col_values(1)[1:]  # ヘッダーを除く
+
+def get_product_options():
+    sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
+        json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+        ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    )).open('【開発用】シードル出庫台帳').worksheet('商品名')
+    return sheet.col_values(1)[1:]
+
+def get_staff_options():
+    sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
+        json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+        ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    )).open('【開発用】シードル出庫台帳').worksheet('スタッフ')
+    return sheet.col_values(1)[1:]
+
 
 # 新しい出庫IDを生成
 def generate_unique_id(出庫情報シート):
@@ -115,6 +137,7 @@ init_db()
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     """手動での出庫情報登録ページ"""
+
     if request.method == 'POST':
         出庫日 = request.form['date']
         出庫先 = request.form['destination']
@@ -132,9 +155,8 @@ def register():
             数量 = request.form.get(f'qty{i}')
             if 商品名 and 数量:
                 details_to_append.append([出庫ID, 商品名, 数量])
-        
+
         if details_to_append:
-            # 複数行を一度に追加
             出庫詳細シート.append_rows(details_to_append, value_input_option='USER_ENTERED')
 
         return render_template(
@@ -142,7 +164,25 @@ def register():
             message="出庫情報を登録しました",
             redirect_url=url_for('register')
         )
-    return render_template('register.html')
+
+    # GETリクエスト時：プルダウンの選択肢を取得してフォームに渡す
+    def get_dropdown_values(sheet_name):
+        sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
+            json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+            ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+        )).open('【開発用】シードル出庫台帳').worksheet(sheet_name)
+        return sheet.col_values(1)[1:]  # ヘッダー行を除く
+
+    shukkosaki_options = get_dropdown_values('出庫先')
+    product_options = get_dropdown_values('商品名')
+    staff_options = get_dropdown_values('スタッフ')
+
+    return render_template(
+        'register.html',
+        shukkosaki_options=shukkosaki_options,
+        product_options=product_options,
+        staff_options=staff_options
+    )
 
 
 @app.route('/list')
