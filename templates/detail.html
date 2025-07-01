@@ -36,6 +36,9 @@
     <p>この出庫IDに対応する出庫詳細はありません。</p>
     {% endif %}
 
+    <!-- 🔽 ここが編集ページへのリンク -->
+    <p><a href="{{ url_for('edit_detail', shukko_id=出庫ID) }}">出庫内容の編集画面に進む</a></p>
+
     <p><a href="{{ url_for('list_data') }}">← 出庫一覧に戻る</a></p>
 </body>
 </html>
