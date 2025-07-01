@@ -36,22 +36,8 @@
     <p>この出庫IDに対応する出庫詳細はありません。</p>
     {% endif %}
 
-    <table border="1">
-        <tr><th>商品名</th><th>数量</th><th>操作</th></tr>
-        {% for item in 出庫詳細 %}
-        <tr>
-        <form action="{{ url_for('edit_detail', shukko_id=出庫ID, detail_id=item['id']) }}" method="post">
-            <td><input type="text" name="product_name" value="{{ item['商品名'] }}"></td>
-            <td><input type="number" name="quantity" value="{{ item['数量'] }}"></td>
-            <td>
-                <button type="submit">保存</button>
-                <a href="{{ url_for('delete_detail', shukko_id=出庫ID, detail_id=item['id']) }}">削除</a>
-            </td>
-        </form>
-        </tr>
-        {% endfor %}
-    </table>
-
+    <!-- 🔽 ここが編集ページへのリンク -->
+    <p><a href="{{ url_for('edit_detail', shukko_id=出庫ID) }}">出庫内容の編集画面に進む</a></p>
 
     <p><a href="{{ url_for('list_data') }}">← 出庫一覧に戻る</a></p>
 </body>
