@@ -12,6 +12,9 @@ import re
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
+from dotenv import load_dotenv
+load_dotenv()
+
 
 # --- 1. アプリケーションの初期設定 ---
 app = Flask(__name__)
@@ -30,18 +33,49 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 def connect_sheets():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    json_content = os.environ.get('GOOGLE_CREDENTIALS_JSON')
-    creds_dict = json.loads(json_content)
+
+    json_path = os.environ.get('GOOGLE_CREDENTIALS_PATH')
+    if not json_path:
+        raise ValueError("⚠️ GOOGLE_CREDENTIALS_PATH が読み込めていません！")
+
+    try:
+        with open(json_path) as f:
+            creds_dict = json.load(f)
+    except Exception as e:
+        raise ValueError(f"⚠️ JSONファイルの読み込みに失敗しました: {e}")
+
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
     sheet = client.open('【開発用】シードル出庫台帳')
     return sheet.worksheet('出庫情報'), sheet.worksheet('出庫詳細')
 
+#プルダウン形式での出庫情報入力
+def get_shukkosaki_options():
+    sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
+        json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+        ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    )).open('【開発用】シードル出庫台帳').worksheet('出庫先')
+    return sheet.col_values(1)[1:]  # ヘッダーを除く
+
+def get_product_options():
+    sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
+        json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+        ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    )).open('【開発用】シードル出庫台帳').worksheet('商品名')
+    return sheet.col_values(1)[1:]
+
+def get_staff_options():
+    sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
+        json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+        ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    )).open('【開発用】シードル出庫台帳').worksheet('スタッフ')
+    return sheet.col_values(1)[1:]
+
 
 # 新しい出庫IDを生成
 def generate_unique_id(出庫情報シート):
     """日付ベースのユニークな出庫IDを生成する (例: 240521-001)"""
-    today_str = datetime.datetime.now().strftime("%y%m%d")
+    today_str = datetime.now().strftime("%y%m%d")
     all_values = 出庫情報シート.get_all_values()
     # ヘッダー行を除き、今日の日付で始まるIDをフィルタリング
     all_ids = [row[0] for row in all_values[1:] if row and row[0].startswith(today_str)]
@@ -103,6 +137,7 @@ init_db()
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     """手動での出庫情報登録ページ"""
+
     if request.method == 'POST':
         出庫日 = request.form['date']
         出庫先 = request.form['destination']
@@ -120,9 +155,8 @@ def register():
             数量 = request.form.get(f'qty{i}')
             if 商品名 and 数量:
                 details_to_append.append([出庫ID, 商品名, 数量])
-        
+
         if details_to_append:
-            # 複数行を一度に追加
             出庫詳細シート.append_rows(details_to_append, value_input_option='USER_ENTERED')
 
         return render_template(
@@ -130,7 +164,25 @@ def register():
             message="出庫情報を登録しました",
             redirect_url=url_for('register')
         )
-    return render_template('register.html')
+
+    # GETリクエスト時：プルダウンの選択肢を取得してフォームに渡す
+    def get_dropdown_values(sheet_name):
+        sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
+            json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+            ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+        )).open('【開発用】シードル出庫台帳').worksheet(sheet_name)
+        return sheet.col_values(1)[1:]  # ヘッダー行を除く
+
+    shukkosaki_options = get_dropdown_values('出庫先')
+    product_options = get_dropdown_values('商品名')
+    staff_options = get_dropdown_values('スタッフ')
+
+    return render_template(
+        'register.html',
+        shukkosaki_options=shukkosaki_options,
+        product_options=product_options,
+        staff_options=staff_options
+    )
 
 
 @app.route('/list')
@@ -182,6 +234,24 @@ def edit(shukko_id):
     return render_template('edit.html', 出庫ID=shukko_id, 出庫情報=出庫情報)
 
 
+@app.route('/delete/<shukko_id>')
+def delete_shukko(shukko_id):
+    出庫情報シート, 出庫詳細シート = connect_sheets()
+
+    # 出庫情報シートから対象行を削除
+    cell = 出庫情報シート.find(shukko_id)
+    if cell:
+        出庫情報シート.delete_rows(cell.row)
+
+    # 出庫詳細シートからも関連行を削除
+    cells = 出庫詳細シート.findall(shukko_id)
+    for c in reversed(cells):  # 後ろから削除しないとインデックスずれる
+        出庫詳細シート.delete_rows(c.row)
+
+    return redirect(url_for('list_data'))  # 一覧に戻る
+
+
+
 @app.route('/edit-detail/<shukko_id>', methods=['GET', 'POST'])
 def edit_detail(shukko_id):
     """出庫詳細の編集ページ"""
@@ -226,6 +296,34 @@ def edit_detail(shukko_id):
     出庫詳細リスト = 出庫詳細シート.get_all_values()
     出庫詳細 = [row for row in 出庫詳細リスト if row[0] == shukko_id]
     return render_template('edit_detail.html', 出庫ID=shukko_id, 出庫詳細=出庫詳細)
+
+
+@app.route('/edit-detail/<shukko_id>/<detail_id>', methods=['POST'])
+def edit_shukko_detail(shukko_id, detail_id):
+    new_name = request.form['product_name']
+    new_qty = request.form['quantity']
+    出庫詳細シート = connect_sheets()[1]
+
+    # detail_idをキーにして該当行を探し更新
+    cell = 出庫詳細シート.find(detail_id)
+    if cell:
+        row = cell.row
+        出庫詳細シート.update_cell(row, 3, new_name)  # 商品名
+        出庫詳細シート.update_cell(row, 4, new_qty)   # 数量
+
+    return redirect(url_for('detail', 出庫ID=shukko_id))
+
+
+@app.route('/delete-detail/<shukko_id>/<detail_id>')
+def delete_detail(shukko_id, detail_id):
+    出庫詳細シート = connect_sheets()[1]
+
+    cell = 出庫詳細シート.find(detail_id)
+    if cell:
+        出庫詳細シート.delete_rows(cell.row)
+
+    return redirect(url_for('detail', 出庫ID=shukko_id))
+
 
 
 def process_and_store_csv(filepath, filename, file_hash):
