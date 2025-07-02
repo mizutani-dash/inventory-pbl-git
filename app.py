@@ -159,7 +159,7 @@ def register():
     # GETリクエスト時：プルダウンの選択肢を取得してフォームに渡す
     def get_dropdown_values(sheet_name):
         sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
-            json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+            json.load(open(os.environ['GOOGLE_CREDENTIALS_JSON'])),
             ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
         )).open('【開発用】シードル出庫台帳').worksheet(sheet_name)
         return sheet.col_values(1)[1:]  # ヘッダー行を除く
