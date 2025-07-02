@@ -92,3 +92,20 @@
     }
 }
 
+/* CSSファイル (style.css) に追記 */
+.pc-title {
+    display: block;
+}
+.mobile-title {
+    display: none;
+}
+
+@media screen and (max-width: 768px) {
+    .pc-title {
+        display: none;
+    }
+    .mobile-title {
+        display: block;
+    }
+}
+
