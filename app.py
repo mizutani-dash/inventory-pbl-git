@@ -43,21 +43,21 @@ def connect_sheets():
 #プルダウン形式での出庫情報入力
 def get_shukkosaki_options():
     sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
-        json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+        json.load(open(os.environ['GOOGLE_CREDENTIALS_JSON'])),
         ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     )).open('【開発用】シードル出庫台帳').worksheet('出庫先')
     return sheet.col_values(1)[1:]  # ヘッダーを除く
 
 def get_product_options():
     sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
-        json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+        json.load(open(os.environ['GOOGLE_CREDENTIALS_JSON'])),
         ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     )).open('【開発用】シードル出庫台帳').worksheet('商品名')
     return sheet.col_values(1)[1:]
 
 def get_staff_options():
     sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
-        json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+        json.load(open(os.environ['GOOGLE_CREDENTIALS_JSON'])),
         ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     )).open('【開発用】シードル出庫台帳').worksheet('スタッフ')
     return sheet.col_values(1)[1:]
