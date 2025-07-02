@@ -33,17 +33,8 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 def connect_sheets():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-
-    json_path = os.environ.get('GOOGLE_CREDENTIALS_PATH')
-    if not json_path:
-        raise ValueError("⚠️ GOOGLE_CREDENTIALS_PATH が読み込めていません！")
-
-    try:
-        with open(json_path) as f:
-            creds_dict = json.load(f)
-    except Exception as e:
-        raise ValueError(f"⚠️ JSONファイルの読み込みに失敗しました: {e}")
-
+    json_content = os.environ.get('GOOGLE_CREDENTIALS_JSON')
+    creds_dict = json.loads(json_content)
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
     sheet = client.open('【開発用】シードル出庫台帳')
@@ -52,21 +43,21 @@ def connect_sheets():
 #プルダウン形式での出庫情報入力
 def get_shukkosaki_options():
     sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
-        json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+        json.load(open(os.environ['GOOGLE_CREDENTIALS_JSON'])),
         ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     )).open('【開発用】シードル出庫台帳').worksheet('出庫先')
     return sheet.col_values(1)[1:]  # ヘッダーを除く
 
 def get_product_options():
     sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
-        json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+        json.load(open(os.environ['GOOGLE_CREDENTIALS_JSON'])),
         ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     )).open('【開発用】シードル出庫台帳').worksheet('商品名')
     return sheet.col_values(1)[1:]
 
 def get_staff_options():
     sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
-        json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+        json.load(open(os.environ['GOOGLE_CREDENTIALS_JSON'])),
         ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     )).open('【開発用】シードル出庫台帳').worksheet('スタッフ')
     return sheet.col_values(1)[1:]
@@ -168,7 +159,7 @@ def register():
     # GETリクエスト時：プルダウンの選択肢を取得してフォームに渡す
     def get_dropdown_values(sheet_name):
         sheet = gspread.authorize(ServiceAccountCredentials.from_json_keyfile_dict(
-            json.load(open(os.environ['GOOGLE_CREDENTIALS_PATH'])),
+            json.load(open(os.environ['GOOGLE_CREDENTIALS_JSON'])),
             ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
         )).open('【開発用】シードル出庫台帳').worksheet(sheet_name)
         return sheet.col_values(1)[1:]  # ヘッダー行を除く
