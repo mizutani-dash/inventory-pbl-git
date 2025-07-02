@@ -33,17 +33,8 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 def connect_sheets():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-
-    json_path = os.environ.get('GOOGLE_CREDENTIALS_PATH')
-    if not json_path:
-        raise ValueError("⚠️ GOOGLE_CREDENTIALS_PATH が読み込めていません！")
-
-    try:
-        with open(json_path) as f:
-            creds_dict = json.load(f)
-    except Exception as e:
-        raise ValueError(f"⚠️ JSONファイルの読み込みに失敗しました: {e}")
-
+    json_content = os.environ.get('GOOGLE_CREDENTIALS_JSON')
+    creds_dict = json.loads(json_content)
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
     sheet = client.open('【開発用】シードル出庫台帳')
