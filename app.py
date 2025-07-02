@@ -13,8 +13,8 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
 from dotenv import load_dotenv
-load_dotenv()
 
+load_dotenv()
 
 # --- 1. アプリケーションの初期設定 ---
 app = Flask(__name__)
